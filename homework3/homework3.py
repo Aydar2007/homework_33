@@ -72,21 +72,21 @@ async def all_inline(call):
 async def Backend(message: types.Message):
     await message.answer(f'Backend — это внутренняя часть продукта, которая находится на сервере и скрыта от пользователей. Для её разработки могут использоваться самые разные языки, например, Python, PHP, Go, JavaScript, Java, С#.')
     await message.answer(f'Стоимость курса 10000 сом в месяц , но при хорошем обучении выдается скидка с 1000 до 2000 сом')
-    await message.answer(f'Обучение длится 5 месяцов',)
+    await message.answer(f'Обучение длится 5 месяцов',reply_markup=inline1)
 @dp.message_handler(commands=['Frontend'], state=None)
 async def Frontend(message: types.Message):
     await message.answer(f'Front-end разработка — это создание клиентской части сайта. Front-end разработчик занимается версткой шаблона сайта и созданием пользовательского интерфейса. Обычно front-end разработчик — это мастер на все руки. Он просто обязан обладать талантом дизайнера, быть искусным верстальщиком и хорошим программистом.')
     await message.answer(f'Стоимость курса 10000 сом в месяц , но при хорошем обучении выдается скидка с 1000 до 2000 сом')
-    await message.answer(f'Обучение длится 5 месяцов')
+    await message.answer(f'Обучение длится 5 месяцов',reply_markup=inline1)
 @dp.message_handler(commands=['Android'], state=None)
 async def Android(message: types.Message):
     await message.answer(f'Android-разработчик создает приложения для устройств на операционной системе Android. Он пишет код, работает над интерфейсом и дизайном, тестирует приложение и исправляет баги, а также адаптирует его под разные модели устройств (которых у Android великое множество).')
     await message.answer(f'Стоимость курса 10000 сом в месяц , но при хорошем обучении выдается скидка с 1000 до 2000 сом')
-    await message.answer(f'Обучение длится 6 месяцов')
+    await message.answer(f'Обучение длится 6 месяцов',reply_markup=inline1)
 @dp.message_handler(commands=['UIUX'], state=None)
 async def UIUX(message: types.Message):
     await message.answer(f'UX/UI-дизайн — это проектирование удобных, понятных и эстетичных пользовательских интерфейсов. Чтобы разобраться, какие задачи решает специалист в этой сфере, нужно понять, что такое UX и UI. UX — user experience — переводится на русский язык как «пользовательский опыт».')
     await message.answer(f'Стоимость курса 10000 сом в месяц , но при хорошем обучении выдается скидка с 1000 до 2000 сом')
-    await message.answer(f'Обучение длится 3 месяцов')
+    await message.answer(f'Обучение длится 3 месяцов',reply_markup=inline1)
 
 executor.start_polling(dp)
