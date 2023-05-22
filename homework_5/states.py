@@ -6,3 +6,9 @@ class SignUpState(StatesGroup):
     address_latitude = State()
     address_longitude = State()
     title = State()
+class PhoneState(StatesGroup):
+    phone = State()
+class LocationState(StatesGroup):
+    address_latitude = State()
+class LocationState2(StatesGroup):
+    address_longitude = State()

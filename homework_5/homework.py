@@ -29,42 +29,36 @@ address_destination, date_time_order. Где пользователь может
 Можете сделать домашнее задание до субботы(20 мая)"""
 
 from dotenv import load_dotenv
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import KeyboardButton,InlineKeyboardMarkup, InlineKeyboardButton,ReplyKeyboardMarkup
 import os,sqlite3,time
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram import Bot, Dispatcher, types, executor
-from states import SignUpState
+from states import SignUpState , PhoneState,LocationState,LocationState2
 from aiogram.dispatcher import FSMContext
 
 load_dotenv('.env')
 bot = Bot(os.environ.get('KEY'))
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
-db = sqlite3.connect('database.db')
+db = sqlite3.connect('db.db')
 cursor = db.cursor()
-cursor.execute("""CREATE TABLE IF NOT EXISTS titles(
+cursor.execute("""CREATE TABLE  IF NOT EXISTS orders(
     id INT,
     title VARCHAR (500),
-    address VARCHAR(100),
-    time VARCHAR(100)
+    time 
 );
 """)
 cursor.connection.commit()
-db3 = sqlite3.connect('database.db')
-cursor = db3.cursor()
 cursor.execute("""CREATE TABLE IF NOT EXISTS users(
     id INT,
     username VARCHAR(150),
     first_name VARCHAR(100),
     last_name VARCHAR(100),
-    tel VARCHAR (10)
+    tel VARCHAR (100)
 );
 """)
 cursor.connection.commit()
 
-
-db2 = sqlite3.connect('database.db')
-cursor = db2.cursor()
 cursor.execute("""CREATE TABLE IF NOT EXISTS address(
     id INT,
     address_latitude VARCHAR(1000),
@@ -74,13 +68,10 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS address(
 cursor.connection.commit()
 
  
-inline_buttons1 = [
-    InlineKeyboardButton('Отправить номер', callback_data='inline_text1'),
-    InlineKeyboardButton('Оправить локацию', callback_data='inline_text2'),
-    InlineKeyboardButton('Заказать еду', callback_data='inline_text3'),
+location_buttons = [
+    KeyboardButton("Отправить локацию", request_location=True)
 ]
-inline1 = InlineKeyboardMarkup().add(*inline_buttons1)
-
+locations = ReplyKeyboardMarkup(resize_keyboard=True).add(*location_buttons)
 
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
@@ -99,57 +90,72 @@ async def start(message: types.Message):
         );""")
         cursor.connection.commit()
 
-    await message.answer(f'Здравствуйте {message.from_user.full_name} '
-                         , reply_markup=inline1)
-@dp.callback_query_handler()
-async def inline(call):
-    if call.data == "inline_text1":
-        await telefon (call.message)
-    elif call.data == "inline_text2":
-        await location (call.message)
-    elif call.data == "inline_text3":
-        await eat (call.message)
+    await message.answer(f'Здравствуйте {message.from_user.full_name}, мои команды /commands ')
     
 
 
-@dp.message_handler(commands=['telefon'], state=None)
-async def telefon(message: types.Message):
-    await message.answer("Напишите cвой номер для связи(Телефонный номер в формате c 0:)")
-    if len(message.text) == 13 and message.text[1:].isdigit() and message.text[0] == "+":
-        sql = '''UPDATE users SET tel = ? WHERE id = {message.from_user.id}'''
-        cursor = cursor.connection()
-        cursor.execute(sql,message.text)
-        cursor.connection.commit()
-        await message.answer(reply_markup=inline1)
-        await SignUpState.tel.set()
-
+@dp.message_handler(commands=['phone'], state=None)
+async def get_phone_number (message:types.Message):
+    await message.answer("Ваши телефоные данные:")
+    await PhoneState.phone.set()
     
+@dp.message_handler(state=PhoneState)
+async def update_user_number(message:types.Message,state:FSMContext):
+    cursor = db.cursor()
+    cursor.execute(f"UPDATE users SET tel = {message.text} WHERE id = {message.from_user.id};")
+    cursor.connection.commit()
 
-@dp.message_handler(commands=['location'], state=None)
-async def location(message: types.Message,):
-    await message.answer("Укажите ширину")
-    await SignUpState.address_latitude.set()
-@dp.message_handler(state=SignUpState.address_latitude)
-async def get_location(message:types.Message, state:FSMContext):
-    await state.update_data(name=message.text)
-    await message.answer("Укажите долгату:")
-    await SignUpState.address_longitude.set()
-@dp.message_handler(state=SignUpState.address_longitude)
-async def get_longitude(message:types.Message, state:FSMContext):
-    await state.update_data(address_longitude=message.text)
-    await message.answer("OK")
-    user_data = await storage.get_data(user=message.from_user.id)
-    cursor = db2.cursor()
-    cursor.execute(f"""INSERT INTO address VALUES(
-        {message.from_user.id},
-        '{user_data["address_latitude"]}',
-        '{user_data['address_longitude']}'
-    );""")
+@dp.message_handler(commands=["location"],state=None)
+async def location(message:types.Message):
+     await message.answer(f"""Укажите ваше местоположение 
+с помощью /latitude (широта) и /longitude (долгота)""")
+
+@dp.message_handler(commands=['latitude'], state=None)
+async def get_location(message: types.Message):
+        await message.answer("Ваша широта")
+        await LocationState.address_latitude.set()
+        cursor=db.cursor()
+        cursor.execute(f"SELECT id FROM users WHERE id = {message.from_user.id};")
+        res = cursor.fetchall()
+        if res == []:
+            cursor.execute(f"""INSERT INTO address VALUES (
+                {message.from_user.id},
+                {0},
+                {0}
+
+            );""")
+            cursor.connection.commit()
+@dp.message_handler(state=LocationState)
+async def update_user_number(message:types.Message,state:FSMContext):
+    cursor = db.cursor()
+    cursor.execute(f"UPDATE address SET address_latitude = {message.text} WHERE id = {message.from_user.id};")
+    cursor.connection.commit()
+
+
+@dp.message_handler(commands=["longitude"],state=None)
+async def gets_location(message:types.message):
+        await message.answer("Ваша долгота")
+        await LocationState2.address_longitude.set()
+@dp.message_handler(state=LocationState2)
+async def update_user_number(message:types.Message,state:FSMContext):
+    cursor = db.cursor()
+    cursor.execute(f"UPDATE address SET address_longitude = {message.text} WHERE id = {message.from_user.id};")
     cursor.connection.commit()
 
 @dp.message_handler(commands=['eat'], state=None)
 async def eat(message: types.Message):
-    await message.answer(f"Введите заголовок:",reply_markup=inline1)
+    await message.answer(f"Введите заголовок:")
     await SignUpState.title.set()
+@dp.message_handler(state=SignUpState)
+async def update_user_number(message:types.Message,state:FSMContext):
+    cursor = db.cursor()
+    cursor.execute(f"""INSERT INTO orders VALUES (
+            {message.from_user.id},
+            '{message.text}',
+            '{time.ctime()}'
+
+        );""")
+    cursor.connection.commit()
+
 
 executor.start_polling(dp)
